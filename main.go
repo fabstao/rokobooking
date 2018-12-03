@@ -10,7 +10,7 @@ import (
 
 func getSession() *mgo.Session {
 	// Connect to our local mongo
-	s, err := mgo.Dial("mongodb://192.168.0.166")
+	s, err := mgo.Dial("mongodb://root:austin23@192.168.0.166")
 
 	// Check if connection error, is mongo running?
 	if err != nil {
