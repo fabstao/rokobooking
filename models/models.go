@@ -23,3 +23,11 @@ type Artist struct {
 	Genre string   `json:"genre"`
 	Rider []string `json:"rider"`
 }
+
+// User :
+type User struct {
+	Id       bson.ObjectId `json:"id" bson:"_id"`
+	Username string        `json:"username"`
+	Passwd   string        `json:"passwd"`
+	Role     string        `json:"role"`
+}
