@@ -1,4 +1,11 @@
 #!/bin/bash
 
-curl -XPOST -H 'Content-Type: application/json' -d '{"username": "operator", "passwd": "nosecret", "role": "operator"}' http://localhost:3000/user
-curl -XPOST -H 'Content-Type: application/json' -d '{"username": "boss", "passwd": "nosecret", "role": "admin"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user1", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user2", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user3", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user4", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user5", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user6", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user7", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user8", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user
+curl -XPOST -H 'Content-Type: application/json' -d '{"username": "user9", "passwd": "nosecret", "role": "user"}' http://localhost:3000/user

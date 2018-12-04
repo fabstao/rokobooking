@@ -8,9 +8,9 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
-func getSession() *mgo.Session {
+func getSession(dbhost string, dbname string, dbuser string, dbpasswd string) *mgo.Session {
 	// Connect to our local mongo
-	s, err := mgo.Dial("mongodb://roko:rokoroko@localhost/rokobookdb")
+	s, err := mgo.Dial("mongodb://" + dbuser + ":" + dbpasswd + "@" + dbhost + "/" + dbname)
 
 	// Check if connection error, is mongo running?
 	if err != nil {
@@ -21,8 +21,12 @@ func getSession() *mgo.Session {
 
 func main() {
 	// Instantiate a new router
+	dbhost := "localhost"
+	dbuser := "roko"
+	dbpasswd := "rokoroko"
+	dbname := "rokobookdb"
 	r := httprouter.New()
-	uc := controllers.NewUserController(getSession())
+	uc := controllers.NewUserController(getSession(dbhost, dbname, dbuser, dbpasswd))
 	r.GET("/test", uc.TestAPI)
 	r.GET("/user/:username", uc.GetUser)
 	r.GET("/users", uc.GetAllUsers)

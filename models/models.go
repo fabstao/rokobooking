@@ -32,7 +32,8 @@ type User struct {
 	Role     string        `json:"role"`
 }
 
+// TestA :
 type TestA struct {
-	Name string `json:name`
-	Msg  string `json:msg`
+	Name string `json:"name"`
+	Msg  string `json:"msg"`
 }
