@@ -31,3 +31,8 @@ type User struct {
 	Passwd   string        `json:"passwd"`
 	Role     string        `json:"role"`
 }
+
+type TestA struct {
+	Name string `json:name`
+	Msg  string `json:msg`
+}
