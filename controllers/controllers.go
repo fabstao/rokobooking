@@ -141,3 +141,102 @@ func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p ht
 	// Write status
 	w.WriteHeader(200)
 }
+
+// GetAllArtists :
+func (uc UserController) GetAllArtists(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	u := models.Artist{}
+	find := uc.session.DB("rokobookdb").C("artists").Find(bson.M{})
+	users := find.Iter()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Fprintf(w, "[")
+	size, _ := find.Count()
+	i := 0
+	for users.Next(&u) {
+		i++
+		uj, err := json.Marshal(u)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "{\"ERROR\": \"err\"}")
+			return
+		}
+		if i < size {
+			fmt.Fprintf(w, "%s,\n", uj)
+		} else {
+			fmt.Fprintf(w, "%s", uj)
+		}
+	}
+	fmt.Fprintf(w, "]")
+}
+
+// GetArtist Methods have to be capitalized to be exported, eg, GetUser and not getUser
+func (uc UserController) GetArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	id := p.ByName("id")
+
+	fmt.Println(id)
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+	oid := bson.ObjectIdHex(id)
+	fmt.Println(oid)
+
+	fmt.Println("GET /artist")
+	u := models.Artist{}
+
+	if err := uc.session.DB("rokobookdb").C("artists").FindId(oid).One(&u); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	uj, err := json.Marshal(u)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Println(uj)
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// CreateArtist :
+func (uc UserController) CreateArtist(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	u := models.Artist{}
+
+	json.NewDecoder(r.Body).Decode(&u)
+	u.Id = bson.NewObjectId()
+
+	uc.session.DB("rokobookdb").C("artists").Insert(u)
+	uj, err := json.Marshal(u)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// DeleteArtist :
+func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	// Grab id
+	id := p.ByName("id")
+	fmt.Println("Deleting: ", id)
+	// Verify id is ObjectId, otherwise bail
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Grab id
+	oid := bson.ObjectIdHex(id)
+
+	// Remove user
+	if err := uc.session.DB("rokobookdb").C("artists").RemoveId(oid); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Write status
+	w.WriteHeader(200)
+}

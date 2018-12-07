@@ -32,6 +32,15 @@ type User struct {
 	Role     string        `json:"role"`
 }
 
+// Booker : Model for booking agents
+type Booker struct {
+	Id bson.ObjectId `json:"id" bson:"_id"`
+	*Profile
+	Art   string   `json:"art"`
+	Genre string   `json:"genre"`
+	Rider []string `json:"rider"`
+}
+
 // TestA :
 type TestA struct {
 	Name string `json:"name"`

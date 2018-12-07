@@ -32,5 +32,9 @@ func main() {
 	r.GET("/users", uc.GetAllUsers)
 	r.POST("/user", uc.CreateUser)
 	r.DELETE("/user/:id", uc.DeleteUser)
+	r.GET("/artist/:id", uc.GetArtist)
+	r.GET("/artists", uc.GetAllArtists)
+	r.POST("/artist", uc.CreateArtist)
+	r.DELETE("/artist/:id", uc.DeleteArtist)
 	http.ListenAndServe("localhost:3000", r)
 }
