@@ -21,7 +21,7 @@ func getSession(dbhost string, dbname string, dbuser string, dbpasswd string) *m
 
 func main() {
 	// Instantiate a new router
-	dbhost := "localhost"
+	dbhost := "192.168.0.166"
 	dbuser := "roko"
 	dbpasswd := "rokoroko"
 	dbname := "rokobookdb"
@@ -36,5 +36,5 @@ func main() {
 	r.GET("/artists", uc.GetAllArtists)
 	r.POST("/artist", uc.CreateArtist)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
-	http.ListenAndServe("localhost:3000", r)
+	http.ListenAndServe("localhost:8188", r)
 }
