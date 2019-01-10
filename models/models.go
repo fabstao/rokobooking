@@ -1,6 +1,9 @@
 package models
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	jwt "github.com/dgrijalva/jwt-go"
+	"gopkg.in/mgo.v2/bson"
+)
 
 // Profile :  base model for profiles, not DRY
 type Profile struct {
@@ -28,7 +31,7 @@ type Artist struct {
 type User struct {
 	Id       bson.ObjectId `json:"id" bson:"_id"`
 	Username string        `json:"username"`
-	Passwd   string        `json:"passwd"`
+	Passwd   string        `json:"passwd,omitempty"`
 	Role     string        `json:"role"`
 }
 
@@ -45,4 +48,15 @@ type Booker struct {
 type TestA struct {
 	Name string `json:"name"`
 	Msg  string `json:"msg"`
+}
+
+// ResponseToken :
+type ResponseToken struct {
+	Token string `json:"token"`
+}
+
+// Claim : From JWT
+type Claim struct {
+	User `json:"user"`
+	jwt.StandardClaims
 }

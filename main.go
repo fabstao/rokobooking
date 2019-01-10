@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"gitlab.com/fabstao/rokobooking/authentication"
 	"gitlab.com/fabstao/rokobooking/controllers"
 	mgo "gopkg.in/mgo.v2"
 )
@@ -35,6 +36,7 @@ func main() {
 	r.GET("/artist/:id", uc.GetArtist)
 	r.GET("/artists", uc.GetAllArtists)
 	r.POST("/artist", uc.CreateArtist)
+	r.POST("/login", authentication.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
-	http.ListenAndServe("localhost:8188", r)
+	http.ListenAndServe("localhost:8189", r)
 }
