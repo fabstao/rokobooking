@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	"gitlab.com/fabstao/rokobooking/authentication"
+
 	"github.com/julienschmidt/httprouter"
 	"gitlab.com/fabstao/rokobooking/models"
 	mgo "gopkg.in/mgo.v2"
@@ -246,4 +248,22 @@ func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p 
 
 	// Write status
 	w.WriteHeader(200)
+}
+
+// CheckT :
+func (uc UserController) CheckT(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	//fmt.Println(elh)
+	user := r.Header.Get("X-Account")
+	us := models.User{Username: user, Role: "admin"}
+	fmt.Println(us)
+	status, err := authentication.ValidateToken(elh, us)
+	fmt.Print("Status: ")
+	fmt.Println(status)
+	checkError(err)
+	salida, err := json.Marshal(status)
+	checkError(err)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write(salida)
 }

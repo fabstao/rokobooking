@@ -38,5 +38,6 @@ func main() {
 	r.POST("/artist", uc.CreateArtist)
 	r.POST("/login", authentication.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
-	http.ListenAndServe("localhost:8189", r)
+	r.POST("/check", uc.CheckT)
+	http.ListenAndServe("localhost:8188", r)
 }

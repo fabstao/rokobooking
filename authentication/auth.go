@@ -115,18 +115,14 @@ func ValidateToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 // ValidateToken : versión sin Request
 func ValidateToken(tokenString string, user models.User) (interface{}, error) {
-	claims := models.Claim{
-		User: user,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 300).Unix(),
-			Issuer:    "Fabs",
-		},
-	}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte("AllYourBase"), nil
+	claims := models.Claim{}
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		//return []byte("AllYourBase"), nil
+		return publicKey, nil
 	})
-	fmt.Println(token)
+	//fmt.Println(token.Claims)
 	if err != nil {
+		fmt.Println("Error: ", err)
 		switch err.(type) {
 		case *jwt.ValidationError:
 			vErr := err.(*jwt.ValidationError)
