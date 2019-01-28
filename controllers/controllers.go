@@ -228,6 +228,15 @@ func (uc UserController) CreateArtist(w http.ResponseWriter, r *http.Request, _ 
 
 // DeleteArtist :
 func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+	us := models.User{Username: user, Role: "admin"}
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
+		return
+	}
 	// Grab id
 	id := p.ByName("id")
 	fmt.Println("Deleting: ", id)

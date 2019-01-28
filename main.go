@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -39,5 +40,8 @@ func main() {
 	r.POST("/login", authentication.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
+	fmt.Println("________________________________________")
+	fmt.Println("Listening on 8188")
+	fmt.Println("________________________________________")
 	http.ListenAndServe("localhost:8188", r)
 }
