@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 	"gitlab.com/fabstao/rokobooking/authentication"
@@ -21,12 +22,23 @@ func getSession(dbhost string, dbname string, dbuser string, dbpasswd string) *m
 	return s
 }
 
+func getenv(key, fallback string) string {
+    value := os.Getenv(key)
+    if len(value) == 0 {
+        return fallback
+    }
+    return value
+}
+
 func main() {
 	// Instantiate a new router
-	dbhost := "192.168.0.166"
-	dbuser := "roko"
-	dbpasswd := "rokoroko"
-	dbname := "rokobookdb"
+	dbhost := getenv("ROKODB_HOST","localhost")
+	dbuser := getenv("ROKODB_USER","roko")
+	dbpasswd := getenv("ROKODB_PASSWD","rokoroko")
+	dbname := getenv("ROKODB_NAME","rokobookdb")
+	PORT := getenv("ROKOPORT","8188")
+	mihost := getenv("ROKOHOST","0.0.0.0")
+	miurl := mihost+":"+PORT
 	r := httprouter.New()
 	uc := controllers.NewUserController(getSession(dbhost, dbname, dbuser, dbpasswd))
 	r.GET("/test", uc.TestAPI)
@@ -41,7 +53,7 @@ func main() {
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
 	fmt.Println("________________________________________")
-	fmt.Println("Listening on 8188")
+	fmt.Println("Listening on ",miurl)
 	fmt.Println("________________________________________")
-	http.ListenAndServe("localhost:8188", r)
+	http.ListenAndServe(miurl, r)
 }
