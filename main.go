@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"gitlab.com/fabstao/rokobooking/authentication"
 	"gitlab.com/fabstao/rokobooking/controllers"
 	mgo "gopkg.in/mgo.v2"
 )
@@ -23,7 +22,8 @@ func getSession(dbhost string, dbname string, dbuser string, dbpasswd string) *m
 
 func main() {
 	// Instantiate a new router
-	dbhost := "192.168.0.166"
+	//dbhost := "192.168.0.166"
+	dbhost := "localhost"
 	dbuser := "roko"
 	dbpasswd := "rokoroko"
 	dbname := "rokobookdb"
@@ -37,7 +37,7 @@ func main() {
 	r.GET("/artist/:id", uc.GetArtist)
 	r.GET("/artists", uc.GetAllArtists)
 	r.POST("/artist", uc.CreateArtist)
-	r.POST("/login", authentication.Login)
+	r.POST("/login", uc.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
 	fmt.Println("________________________________________")

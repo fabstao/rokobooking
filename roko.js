@@ -1,4 +1,4 @@
-use rokobookdb;
+//use rokobookdb;
 db.createUser({
   user: "roko",
   pwd: "rokoroko",

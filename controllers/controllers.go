@@ -276,3 +276,33 @@ func (uc UserController) CheckT(w http.ResponseWriter, r *http.Request, p httpro
 	w.WriteHeader(200)
 	w.Write(salida)
 }
+
+// Login :
+func (uc UserController) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var user models.User
+	var userdb models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	checkError(err)
+
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": user.Username}).One(&userdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	if user.Username == userdb.Username && user.Passwd == userdb.Passwd {
+		user.Passwd = ""
+		user.Role = userdb.Role
+		fmt.Printf("Successful login: %v  with role: %v ", user.Username, user.Role)
+		token, err := authentication.GenerateJWT(user)
+		checkError(err)
+		result := models.ResponseToken{Token: token}
+		jsonResult, err := json.Marshal(result)
+		checkError(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) // 200
+		w.Write(jsonResult)
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+		log.Println("Usuario o contraseña inválidos")
+		w.Write([]byte("{\"error\":\"Invalid password\"}"))
+	}
+}
