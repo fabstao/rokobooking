@@ -291,7 +291,7 @@ func (uc UserController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 	if user.Username == userdb.Username && user.Passwd == userdb.Passwd {
 		user.Passwd = ""
 		user.Role = userdb.Role
-		fmt.Printf("Successful login: %v  with role: %v ", user.Username, user.Role)
+		fmt.Printf("Successful login: %v  with role: %v \n", user.Username, user.Role)
 		token, err := authentication.GenerateJWT(user)
 		checkError(err)
 		result := models.ResponseToken{Token: token}
