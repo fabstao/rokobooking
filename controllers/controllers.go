@@ -129,21 +129,41 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 
 // DeleteUser :
 func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	// Grab id
-	id := p.ByName("id")
-	fmt.Println("Deleting: ", id)
-	// Verify id is ObjectId, otherwise bail
-	if !bson.IsObjectIdHex(id) {
+	// Grab Headers
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+	username := p.ByName("username")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
 		w.WriteHeader(404)
 		return
 	}
 
-	// Grab id
-	oid := bson.ObjectIdHex(id)
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
+		return
+	}
 
-	// Remove user
-	if err := uc.session.DB("rokobookdb").C("users").RemoveId(oid); err != nil {
+	us.Role = usdb.Role
+
+	// Grab id
+	//oid := bson.ObjectIdHex(username)
+
+	if usdb.Role != "admin" {
 		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
+	fmt.Println("Deleting: ", username)
+	// Remove username
+	if err := uc.session.DB("rokobookdb").C("users").Remove(bson.M{"username": username}); err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Error interno")
 		return
 	}
 
@@ -230,26 +250,41 @@ func (uc UserController) CreateArtist(w http.ResponseWriter, r *http.Request, _ 
 func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	elh := r.Header.Get("X-Token")
 	user := r.Header.Get("X-Account")
-	us := models.User{Username: user, Role: "admin"}
+	us := models.User{Username: user}
+	usdb := models.User{}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
 	_, err := authentication.ValidateToken(elh, us)
 	if err != nil {
 		w.WriteHeader(403)
 		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
 		return
 	}
-	// Grab id
+
+	if us.Role != "admin" {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"Not enough privileges\" }")
+		return
+	}
+
+	// GET id
 	id := p.ByName("id")
 	fmt.Println("Deleting: ", id)
-	// Verify id is ObjectId, otherwise bail
+	// Verifica que ID sea usable en Mongo
 	if !bson.IsObjectIdHex(id) {
 		w.WriteHeader(404)
 		return
 	}
 
-	// Grab id
+	// Parsear ID
 	oid := bson.ObjectIdHex(id)
 
-	// Remove user
+	// Borrar artista en Mongo
 	if err := uc.session.DB("rokobookdb").C("artists").RemoveId(oid); err != nil {
 		w.WriteHeader(404)
 		return
