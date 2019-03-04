@@ -81,15 +81,31 @@ func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ h
 // GetUser Methods have to be capitalized to be exported, eg, GetUser and not getUser
 func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	username := p.ByName("username")
-	/*
-		fmt.Println(id)
-		if !bson.IsObjectIdHex(id) {
-			w.WriteHeader(404)
-			return
-		}
-		oid := bson.ObjectIdHex(id)
-		fmt.Println(oid)
-	*/
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	us.Role = usdb.Role
+
+	if usdb.Role != "admin" {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
 	fmt.Println("GET /user")
 	fmt.Println(username)
 	u := models.User{}
@@ -98,6 +114,7 @@ func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httpr
 		w.WriteHeader(404)
 		return
 	}
+
 	uj, err := json.Marshal(u)
 	if err != nil {
 		fmt.Println(err)
@@ -130,28 +147,25 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 // DeleteUser :
 func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	// Grab Headers
+	username := p.ByName("username")
 	elh := r.Header.Get("X-Token")
 	user := r.Header.Get("X-Account")
-	username := p.ByName("username")
 
 	us := models.User{Username: user}
 	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
 	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
 		w.WriteHeader(404)
 		return
 	}
 
-	_, err := authentication.ValidateToken(elh, us)
-	if err != nil {
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
-		return
-	}
-
 	us.Role = usdb.Role
-
-	// Grab id
-	//oid := bson.ObjectIdHex(username)
 
 	if usdb.Role != "admin" {
 		w.WriteHeader(404)
@@ -262,7 +276,7 @@ func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p 
 	_, err := authentication.ValidateToken(elh, us)
 	if err != nil {
 		w.WriteHeader(403)
-		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
 		return
 	}
 
