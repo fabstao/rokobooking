@@ -81,15 +81,31 @@ func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ h
 // GetUser Methods have to be capitalized to be exported, eg, GetUser and not getUser
 func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	username := p.ByName("username")
-	/*
-		fmt.Println(id)
-		if !bson.IsObjectIdHex(id) {
-			w.WriteHeader(404)
-			return
-		}
-		oid := bson.ObjectIdHex(id)
-		fmt.Println(oid)
-	*/
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	us.Role = usdb.Role
+
+	if usdb.Role != "admin" {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
 	fmt.Println("GET /user")
 	fmt.Println(username)
 	u := models.User{}
@@ -98,6 +114,7 @@ func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httpr
 		w.WriteHeader(404)
 		return
 	}
+
 	uj, err := json.Marshal(u)
 	if err != nil {
 		fmt.Println(err)
@@ -129,21 +146,38 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 
 // DeleteUser :
 func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	// Grab id
-	id := p.ByName("id")
-	fmt.Println("Deleting: ", id)
-	// Verify id is ObjectId, otherwise bail
-	if !bson.IsObjectIdHex(id) {
+	// Grab Headers
+	username := p.ByName("username")
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
 		w.WriteHeader(404)
 		return
 	}
 
-	// Grab id
-	oid := bson.ObjectIdHex(id)
+	us.Role = usdb.Role
 
-	// Remove user
-	if err := uc.session.DB("rokobookdb").C("users").RemoveId(oid); err != nil {
+	if usdb.Role != "admin" {
 		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
+	fmt.Println("Deleting: ", username)
+	// Remove username
+	if err := uc.session.DB("rokobookdb").C("users").Remove(bson.M{"username": username}); err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, "Error interno")
 		return
 	}
 
@@ -230,26 +264,41 @@ func (uc UserController) CreateArtist(w http.ResponseWriter, r *http.Request, _ 
 func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	elh := r.Header.Get("X-Token")
 	user := r.Header.Get("X-Account")
-	us := models.User{Username: user, Role: "admin"}
+	us := models.User{Username: user}
+	usdb := models.User{}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
 	_, err := authentication.ValidateToken(elh, us)
 	if err != nil {
 		w.WriteHeader(403)
-		fmt.Fprintf(w, "{ \"Status\": \"Unauthorized\"  }")
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
 		return
 	}
-	// Grab id
+
+	if us.Role != "admin" {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"Not enough privileges\" }")
+		return
+	}
+
+	// GET id
 	id := p.ByName("id")
 	fmt.Println("Deleting: ", id)
-	// Verify id is ObjectId, otherwise bail
+	// Verifica que ID sea usable en Mongo
 	if !bson.IsObjectIdHex(id) {
 		w.WriteHeader(404)
 		return
 	}
 
-	// Grab id
+	// Parsear ID
 	oid := bson.ObjectIdHex(id)
 
-	// Remove user
+	// Borrar artista en Mongo
 	if err := uc.session.DB("rokobookdb").C("artists").RemoveId(oid); err != nil {
 		w.WriteHeader(404)
 		return
@@ -275,4 +324,34 @@ func (uc UserController) CheckT(w http.ResponseWriter, r *http.Request, p httpro
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write(salida)
+}
+
+// Login :
+func (uc UserController) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var user models.User
+	var userdb models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	checkError(err)
+
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": user.Username}).One(&userdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	if user.Username == userdb.Username && user.Passwd == userdb.Passwd {
+		user.Passwd = ""
+		user.Role = userdb.Role
+		fmt.Printf("Successful login: %v  with role: %v \n", user.Username, user.Role)
+		token, err := authentication.GenerateJWT(user)
+		checkError(err)
+		result := models.ResponseToken{Token: token}
+		jsonResult, err := json.Marshal(result)
+		checkError(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) // 200
+		w.Write(jsonResult)
+	} else {
+		w.WriteHeader(http.StatusForbidden)
+		log.Println("Usuario o contraseña inválidos")
+		w.Write([]byte("{\"error\":\"Invalid password\"}"))
+	}
 }

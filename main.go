@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
-	"gitlab.com/fabstao/rokobooking/authentication"
 	"gitlab.com/fabstao/rokobooking/controllers"
 	mgo "gopkg.in/mgo.v2"
 )
@@ -32,6 +31,7 @@ func getenv(key, fallback string) string {
 
 func main() {
 	// Instantiate a new router
+<<<<<<< HEAD
 	dbhost := getenv("ROKODB_HOST","localhost")
 	dbuser := getenv("ROKODB_USER","roko")
 	dbpasswd := getenv("ROKODB_PASSWD","rokoroko")
@@ -39,17 +39,24 @@ func main() {
 	PORT := getenv("ROKOPORT","8188")
 	mihost := getenv("ROKOHOST","0.0.0.0")
 	miurl := mihost+":"+PORT
+=======
+	//dbhost := "192.168.0.166"
+	dbhost := "localhost"
+	dbuser := "roko"
+	dbpasswd := "rokoroko"
+	dbname := "rokobookdb"
+>>>>>>> 9775dc4bf5e43f4190eb5effa1ce6e692f64fe90
 	r := httprouter.New()
 	uc := controllers.NewUserController(getSession(dbhost, dbname, dbuser, dbpasswd))
 	r.GET("/test", uc.TestAPI)
 	r.GET("/user/:username", uc.GetUser)
 	r.GET("/users", uc.GetAllUsers)
 	r.POST("/user", uc.CreateUser)
-	r.DELETE("/user/:id", uc.DeleteUser)
+	r.DELETE("/user/:username", uc.DeleteUser)
 	r.GET("/artist/:id", uc.GetArtist)
 	r.GET("/artists", uc.GetAllArtists)
 	r.POST("/artist", uc.CreateArtist)
-	r.POST("/login", authentication.Login)
+	r.POST("/login", uc.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
 	fmt.Println("________________________________________")

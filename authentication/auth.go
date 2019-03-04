@@ -2,17 +2,14 @@ package authentication
 
 import (
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 
 	"gitlab.com/fabstao/rokobooking/models"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/julienschmidt/httprouter"
 )
 
 var (
@@ -51,29 +48,6 @@ func GenerateJWT(user models.User) (string, error) {
 	result, err := token.SignedString(privateKey)
 	//checkError(err)
 	return result, err
-}
-
-// Login :
-func Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user)
-	checkError(err)
-	if user.Username == "fabs" && user.Passwd == "abcd1234" {
-		user.Passwd = ""
-		user.Role = "admin"
-		token, err := GenerateJWT(user)
-		checkError(err)
-		result := models.ResponseToken{Token: token}
-		jsonResult, err := json.Marshal(result)
-		checkError(err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // 200
-		w.Write(jsonResult)
-	} else {
-		w.WriteHeader(http.StatusForbidden)
-		log.Println("Usuario o contraseña inválidos")
-		w.Write([]byte("{\"error\":\"Invalid password\"}"))
-	}
 }
 
 // ValidateToken :
