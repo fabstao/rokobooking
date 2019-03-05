@@ -53,6 +53,31 @@ func (uc UserController) TestAPI(w http.ResponseWriter, r *http.Request, _ httpr
 
 // GetAllUsers :
 func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	us.Role = usdb.Role
+
+	if usdb.Role != "admin" {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
 	u := models.User{}
 	find := uc.session.DB("rokobookdb").C("users").Find(bson.M{})
 	users := find.Iter()
@@ -78,7 +103,7 @@ func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ h
 	fmt.Fprintf(w, "]")
 }
 
-// GetUser Methods have to be capitalized to be exported, eg, GetUser and not getUser
+// GetUser ya con seguridad
 func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	username := p.ByName("username")
 	elh := r.Header.Get("X-Token")
@@ -185,8 +210,33 @@ func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p ht
 	w.WriteHeader(200)
 }
 
-// GetAllArtists :
+// GetAllArtists : ya con seguridad
 func (uc UserController) GetAllArtists(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
+	if usdb.Role != "admin" {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		return
+	}
+
 	u := models.Artist{}
 	find := uc.session.DB("rokobookdb").C("artists").Find(bson.M{})
 	users := find.Iter()
