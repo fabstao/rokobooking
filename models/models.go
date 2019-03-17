@@ -44,6 +44,21 @@ type Booker struct {
 	Rider []string `json:"rider"`
 }
 
+// Venue : Model for concert venues
+type Venue struct {
+	Id bson.ObjectId `json:"id" bson:"_id"`
+	*Profile
+	Street   string   `json:"street"`
+	Address  string   `json:"address"`
+	City     string   `json:"string"`
+	ZipCode  string   `json:"zipcode"`
+	State    string   `json:"state"`
+	Country  string   `json:"country"`
+	Location string   `json:"location"`
+	Capacity int      `json:"capacity"`
+	Audio    []string `json:"audio"`
+}
+
 // TestA :
 type TestA struct {
 	Name string `json:"name"`

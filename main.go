@@ -21,31 +21,24 @@ func getSession(dbhost string, dbname string, dbuser string, dbpasswd string) *m
 	return s
 }
 
+// Crear función que tome variable de entonrno o valor por defecto
 func getenv(key, fallback string) string {
-    value := os.Getenv(key)
-    if len(value) == 0 {
-        return fallback
-    }
-    return value
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
 }
 
 func main() {
 	// Instantiate a new router
-<<<<<<< HEAD
-	dbhost := getenv("ROKODB_HOST","localhost")
-	dbuser := getenv("ROKODB_USER","roko")
-	dbpasswd := getenv("ROKODB_PASSWD","rokoroko")
-	dbname := getenv("ROKODB_NAME","rokobookdb")
-	PORT := getenv("ROKOPORT","8188")
-	mihost := getenv("ROKOHOST","0.0.0.0")
-	miurl := mihost+":"+PORT
-=======
-	//dbhost := "192.168.0.166"
-	dbhost := "localhost"
-	dbuser := "roko"
-	dbpasswd := "rokoroko"
-	dbname := "rokobookdb"
->>>>>>> 9775dc4bf5e43f4190eb5effa1ce6e692f64fe90
+	dbhost := getenv("ROKODB_HOST", "localhost")
+	dbuser := getenv("ROKODB_USER", "roko")
+	dbpasswd := getenv("ROKODB_PASSWD", "rokoroko")
+	dbname := getenv("ROKODB_NAME", "rokobookdb")
+	PORT := getenv("ROKOPORT", "8188")
+	mihost := getenv("ROKOHOST", "0.0.0.0")
+	miurl := mihost + ":" + PORT
 	r := httprouter.New()
 	uc := controllers.NewUserController(getSession(dbhost, dbname, dbuser, dbpasswd))
 	r.GET("/test", uc.TestAPI)
@@ -60,7 +53,7 @@ func main() {
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
 	fmt.Println("________________________________________")
-	fmt.Println("Listening on ",miurl)
+	fmt.Println("Listening on ", miurl)
 	fmt.Println("________________________________________")
 	http.ListenAndServe(miurl, r)
 }
