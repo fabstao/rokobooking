@@ -10,6 +10,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"gitlab.com/fabstao/rokobooking/models"
+	"golang.org/x/crypto/bcrypt"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -42,7 +43,7 @@ func (uc UserController) TestAPI(w http.ResponseWriter, r *http.Request, _ httpr
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)
-		fmt.Fprintf(w, "{\"ERROR\": \"err\"}")
+		fmt.Fprintf(w, "{\"ERROR\": \"%v\"}", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -74,7 +75,7 @@ func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ h
 
 	if usdb.Role != "admin" {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		privnon(w)
 		return
 	}
 
@@ -127,7 +128,7 @@ func (uc UserController) GetUser(w http.ResponseWriter, r *http.Request, p httpr
 
 	if usdb.Role != "admin" {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		privnon(w)
 		return
 	}
 
@@ -157,6 +158,14 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 
 	json.NewDecoder(r.Body).Decode(&u)
 	u.Id = bson.NewObjectId()
+	fmt.Printf("%+v\n", u)
+	bpsw, err := bcrypt.GenerateFromPassword([]byte(u.Passwd), bcrypt.MinCost)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return
+	}
+
+	u.Passwd = string(bpsw)
 
 	uc.session.DB("rokobookdb").C("users").Insert(u)
 	uj, err := json.Marshal(u)
@@ -194,7 +203,7 @@ func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p ht
 
 	if usdb.Role != "admin" {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
+		privnon(w)
 		return
 	}
 
@@ -231,11 +240,13 @@ func (uc UserController) GetAllArtists(w http.ResponseWriter, r *http.Request, _
 
 	us.Role = usdb.Role
 
-	if usdb.Role != "admin" {
-		w.WriteHeader(404)
-		fmt.Fprintf(w, "Privilegios insuficientes, Rol: %v", usdb.Role)
-		return
-	}
+	/*
+		if usdb.Role != "admin" {
+			w.WriteHeader(404)
+			privnon(w)
+			return
+		}
+	*/
 
 	u := models.Artist{}
 	find := uc.session.DB("rokobookdb").C("artists").Find(bson.M{})
@@ -265,6 +276,32 @@ func (uc UserController) GetAllArtists(w http.ResponseWriter, r *http.Request, _
 // GetArtist Methods have to be capitalized to be exported, eg, GetUser and not getUser
 func (uc UserController) GetArtist(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	id := p.ByName("id")
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	/*
+		if usdb.Role != "admin" {
+			w.WriteHeader(404)
+			privnon(w)
+			return
+		} */
 
 	fmt.Println(id)
 	if !bson.IsObjectIdHex(id) {
@@ -332,7 +369,7 @@ func (uc UserController) DeleteArtist(w http.ResponseWriter, r *http.Request, p 
 
 	if us.Role != "admin" {
 		w.WriteHeader(403)
-		fmt.Fprintf(w, "{ \"Status\": \"Not enough privileges\" }")
+		privnon(w)
 		return
 	}
 
@@ -387,7 +424,9 @@ func (uc UserController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 		w.WriteHeader(404)
 		return
 	}
-	if user.Username == userdb.Username && user.Passwd == userdb.Passwd {
+
+	err = bcrypt.CompareHashAndPassword([]byte(userdb.Passwd), []byte(user.Passwd))
+	if user.Username == userdb.Username && err == nil {
 		user.Passwd = ""
 		user.Role = userdb.Role
 		fmt.Printf("Successful login: %v  with role: %v \n", user.Username, user.Role)
@@ -401,7 +440,12 @@ func (uc UserController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 		w.Write(jsonResult)
 	} else {
 		w.WriteHeader(http.StatusForbidden)
-		log.Println("Usuario o contraseña inválidos")
-		w.Write([]byte("{\"error\":\"Invalid password\"}"))
+		fmt.Println("Usuario o contraseña inválidos")
+		w.Write([]byte("{\"ERROR\": \"Invalid password\"}"))
 	}
+}
+
+func privnon(w http.ResponseWriter) {
+	fmt.Println("CRITICO: Privilegios insuficientes")
+	fmt.Fprintf(w, "{ \"ERROR\": \"Privilegios insuficientes\" }")
 }

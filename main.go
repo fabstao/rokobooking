@@ -52,8 +52,10 @@ func main() {
 	r.POST("/login", uc.Login)
 	r.DELETE("/artist/:id", uc.DeleteArtist)
 	r.POST("/check", uc.CheckT)
+	fmt.Println("")
 	fmt.Println("________________________________________")
 	fmt.Println("Listening on ", miurl)
 	fmt.Println("________________________________________")
+	fmt.Println("")
 	http.ListenAndServe(miurl, r)
 }
