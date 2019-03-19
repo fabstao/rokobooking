@@ -158,7 +158,7 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 
 	json.NewDecoder(r.Body).Decode(&u)
 	u.Id = bson.NewObjectId()
-	fmt.Printf("%+v\n", u)
+	//fmt.Printf("%+v\n", u)
 	bpsw, err := bcrypt.GenerateFromPassword([]byte(u.Passwd), bcrypt.MinCost)
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -168,6 +168,7 @@ func (uc UserController) CreateUser(w http.ResponseWriter, r *http.Request, _ ht
 	u.Passwd = string(bpsw)
 
 	uc.session.DB("rokobookdb").C("users").Insert(u)
+	u.Passwd = "*****" //In production, hide passwords
 	uj, err := json.Marshal(u)
 	if err != nil {
 		fmt.Println(err)
