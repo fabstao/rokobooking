@@ -332,13 +332,40 @@ func (uc UserController) GetArtist(w http.ResponseWriter, r *http.Request, p htt
 
 // CreateArtist :
 func (uc UserController) CreateArtist(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	u := models.Artist{}
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
 
-	json.NewDecoder(r.Body).Decode(&u)
-	u.Id = bson.NewObjectId()
+	us := models.User{Username: user}
+	usdb := models.User{}
 
-	uc.session.DB("rokobookdb").C("artists").Insert(u)
-	uj, err := json.Marshal(u)
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	if usdb.Role != "user" {
+		w.WriteHeader(404)
+		privnon(w)
+		return
+	}
+
+	artist := models.Artist{}
+
+	json.NewDecoder(r.Body).Decode(&artist)
+	artist.Id = bson.NewObjectId()
+	artist.Uid = us.Id
+
+	uc.session.DB("rokobookdb").C("artists").Insert(artist)
+	uj, err := json.Marshal(artist)
 	if err != nil {
 		fmt.Println(err)
 	}

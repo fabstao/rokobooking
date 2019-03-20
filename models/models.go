@@ -7,15 +7,16 @@ import (
 
 // Profile :  base model for profiles, not DRY
 type Profile struct {
-	Name    string `json:"name"`
-	Rep     string `json:"rep"`
-	Phone   string `json:"phone"`
-	Email   string `json:"email"`
-	Www     string `json:"www"`
-	Fb      string `json:"fb"`
-	Inst    string `json:"inst"`
-	Twitter string `json:"twitter"`
-	Desc    string `json:"desc"`
+	Uid     bson.ObjectId `json:"uid" bson:"uid"`
+	Name    string        `json:"name"`
+	Rep     string        `json:"rep"`
+	Phone   string        `json:"phone"`
+	Email   string        `json:"email"`
+	Www     string        `json:"www"`
+	Fb      string        `json:"fb"`
+	Inst    string        `json:"inst"`
+	Twitter string        `json:"twitter"`
+	Desc    string        `json:"desc"`
 }
 
 // Artist : Model for artists
