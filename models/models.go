@@ -40,9 +40,9 @@ type User struct {
 type Booker struct {
 	Id bson.ObjectId `json:"id" bson:"_id"`
 	*Profile
-	Art   string   `json:"art"`
-	Genre string   `json:"genre"`
-	Rider []string `json:"rider"`
+	Venues    []string `json:"venues"`
+	Genres    []string `json:"genres"`
+	Languages []string `json:"languages"`
 }
 
 // Venue : Model for concert venues
