@@ -53,6 +53,10 @@ func (uc UserController) TestAPI(w http.ResponseWriter, r *http.Request, _ httpr
 	fmt.Println(uj, u)
 }
 
+// ***************************************
+// * USERS
+// ***************************************
+
 // GetAllUsers :
 func (uc UserController) GetAllUsers(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	elh := r.Header.Get("X-Token")
@@ -220,6 +224,10 @@ func (uc UserController) DeleteUser(w http.ResponseWriter, r *http.Request, p ht
 	// Write status
 	w.WriteHeader(200)
 }
+
+// ***************************************
+// * Artists
+// ***************************************
 
 // GetAllArtists : ya con seguridad
 func (uc UserController) GetAllArtists(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -630,6 +638,16 @@ func (uc UserController) DeleteBooker(w http.ResponseWriter, r *http.Request, p 
 	// Write status
 	w.WriteHeader(200)
 }
+
+// ***************************************
+// * Concert Venues
+// ***************************************
+
+// TODO
+
+// ***************************************
+// * Checks, Login
+// ***************************************
 
 // CheckT : Checar Token
 func (uc UserController) CheckT(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

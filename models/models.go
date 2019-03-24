@@ -60,6 +60,16 @@ type Venue struct {
 	Audio    []string `json:"audio"`
 }
 
+// Audio : Model for audio rental services
+type Audio struct {
+	Id bson.ObjectId `json:"id" bson:"_id"`
+	*Profile
+	PA       []string `json:"pa"`
+	Watts    []string `json:"watts"` // Watts totales del PA
+	Backline []string `json:"backline"`
+	Luces    []string `json:"luces"`
+}
+
 // TestA :
 type TestA struct {
 	Name string `json:"name"`
