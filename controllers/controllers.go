@@ -15,8 +15,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var artist = models.Artist{}
-var booker = models.Booker{}
+//var artist = models.Artist{}
+//var booker = models.Venue{}
 
 func checkError(err error) {
 	if err != nil {
@@ -641,6 +641,213 @@ func (uc UserController) DeleteBooker(w http.ResponseWriter, r *http.Request, p 
 
 // ***************************************
 // * Concert Venues
+// ***************************************
+
+// GetAllVenues : Listar todos los venues
+func (uc UserController) GetAllVenues(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
+	/*
+				if usdb.Role != "admin" {
+					w.WriteHeader(404)
+					privnon(w)
+		//			return
+				//}
+	*/
+
+	u := models.Venue{}
+	find := uc.session.DB("rokobookdb").C("venues").Find(bson.M{})
+	users := find.Iter()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Fprintf(w, "[")
+	size, _ := find.Count()
+	i := 0
+	for users.Next(&u) {
+		i++
+		uj, err := json.Marshal(u)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "{\"ERROR\": \"err\"}")
+			return
+		}
+		if i < size {
+			fmt.Fprintf(w, "%s,\n", uj)
+		} else {
+			fmt.Fprintf(w, "%s", uj)
+		}
+	}
+	fmt.Fprintf(w, "]")
+}
+
+// GetVenue Methods have to be capitalized to be exported, eg, GetUser and not getUser
+func (uc UserController) GetVenue(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	id := p.ByName("id")
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	/*
+		if usdb.Role != "admin" {
+			w.WriteHeader(404)
+			privnon(w)
+			return
+		} */
+
+	fmt.Println(id)
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+	oid := bson.ObjectIdHex(id)
+	fmt.Println(oid)
+
+	fmt.Println("GET /Venue")
+	u := models.Venue{}
+
+	if err := uc.session.DB("rokobookdb").C("venues").FindId(oid).One(&u); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	uj, err := json.Marshal(u)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Println(uj)
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// CreateVenue :
+func (uc UserController) CreateVenue(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	if usdb.Role != "user" {
+		w.WriteHeader(404)
+		privnon(w)
+		//		return
+	} //
+
+	venue := models.Venue{}
+
+	json.NewDecoder(r.Body).Decode(&venue)
+	venue.Id = bson.NewObjectId()
+	venue.Uid = us.Id
+
+	uc.session.DB("rokobookdb").C("venues").Insert(venue)
+	uj, err := json.Marshal(venue)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// DeleteVenue : Borrar perfil de venue
+func (uc UserController) DeleteVenue(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+	us := models.User{Username: user}
+	usdb := models.User{}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+
+	if us.Role != "admin" {
+		w.WriteHeader(403)
+		privnon(w)
+		return
+	}
+
+	// GET id
+	id := p.ByName("id")
+	fmt.Println("Borrando: ", id)
+	// Verifica que ID sea usable en Mongo
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Parsear ID
+	oid := bson.ObjectIdHex(id)
+
+	// Borrar Bookers en Mongo
+	if err := uc.session.DB("rokobookdb").C("venues").RemoveId(oid); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Write status
+	w.WriteHeader(200)
+}
+
+// ***************************************
+// * Concert Audio
 // ***************************************
 
 // TODO
