@@ -65,7 +65,7 @@ type Audio struct {
 	Id bson.ObjectId `json:"id" bson:"_id"`
 	*Profile
 	PA       []string `json:"pa"`
-	Watts    []string `json:"watts"` // Watts totales del PA
+	Watts    float32  `json:"watts"` // Watts totales del PA
 	Backline []string `json:"backline"`
 	Luces    []string `json:"luces"`
 }

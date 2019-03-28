@@ -850,7 +850,208 @@ func (uc UserController) DeleteVenue(w http.ResponseWriter, r *http.Request, p h
 // * Concert Audio
 // ***************************************
 
-// TODO
+// GetAllAudios : Listar todos los audios
+func (uc UserController) GetAllAudios(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
+	/*
+				if usdb.Role != "admin" {
+					w.WriteHeader(404)
+					privnon(w)
+		//			return
+				//}
+	*/
+
+	u := models.Audio{}
+	find := uc.session.DB("rokobookdb").C("audios").Find(bson.M{})
+	users := find.Iter()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Fprintf(w, "[")
+	size, _ := find.Count()
+	i := 0
+	for users.Next(&u) {
+		i++
+		uj, err := json.Marshal(u)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "{\"ERROR\": \"err\"}")
+			return
+		}
+		if i < size {
+			fmt.Fprintf(w, "%s,\n", uj)
+		} else {
+			fmt.Fprintf(w, "%s", uj)
+		}
+	}
+	fmt.Fprintf(w, "]")
+}
+
+// GetAudio Methods have to be capitalized to be exported, eg, GetUser and not getUser
+func (uc UserController) GetAudio(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	id := p.ByName("id")
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	/*
+		if usdb.Role != "admin" {
+			w.WriteHeader(404)
+			privnon(w)
+			return
+		} */
+
+	fmt.Println(id)
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+	oid := bson.ObjectIdHex(id)
+	fmt.Println(oid)
+
+	fmt.Println("GET /Audio")
+	u := models.Audio{}
+
+	if err := uc.session.DB("rokobookdb").C("audios").FindId(oid).One(&u); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	uj, err := json.Marshal(u)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200
+	fmt.Println(uj)
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// CreateAudio :
+func (uc UserController) CreateAudio(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+
+	us := models.User{Username: user}
+	usdb := models.User{}
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+	us.Id = usdb.Id
+
+	if usdb.Role != "user" {
+		w.WriteHeader(404)
+		privnon(w)
+		//		return
+	} //
+
+	audio := models.Audio{}
+
+	json.NewDecoder(r.Body).Decode(&audio)
+	audio.Id = bson.NewObjectId()
+	audio.Uid = us.Id
+
+	uc.session.DB("rokobookdb").C("audios").Insert(audio)
+	uj, err := json.Marshal(audio)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated) // 201
+	fmt.Fprintf(w, "%s\n", uj)
+}
+
+// DeleteAudio : Borrar perfil de audio
+func (uc UserController) DeleteAudio(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	elh := r.Header.Get("X-Token")
+	user := r.Header.Get("X-Account")
+	us := models.User{Username: user}
+	usdb := models.User{}
+	if err := uc.session.DB("rokobookdb").C("users").Find(bson.M{"username": us.Username}).One(&usdb); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	us.Role = usdb.Role
+
+	_, err := authentication.ValidateToken(elh, us)
+	if err != nil {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "{ \"Status\": \"No autorizado\"  }")
+		return
+	}
+
+	if us.Role != "admin" {
+		w.WriteHeader(403)
+		privnon(w)
+		return
+	}
+
+	// GET id
+	id := p.ByName("id")
+	fmt.Println("Borrando: ", id)
+	// Verifica que ID sea usable en Mongo
+	if !bson.IsObjectIdHex(id) {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Parsear ID
+	oid := bson.ObjectIdHex(id)
+
+	// Borrar Bookers en Mongo
+	if err := uc.session.DB("rokobookdb").C("audios").RemoveId(oid); err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	// Write status
+	w.WriteHeader(200)
+}
 
 // ***************************************
 // * Checks, Login
