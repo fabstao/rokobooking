@@ -2,7 +2,7 @@
 
 ## Pre Alpha stage
 
-### Private code, stay away
-
 ## TODO
-Crear Venues y probablemente sonideros
+Agregar queries de búsqueda
+
+> (C) Fabián Salamanca fsalaman@gmail.com
